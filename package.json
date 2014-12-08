@@ -1,0 +1,12 @@
+{
+  "private" : true,
+  "name": "spotify-hamac",
+  "version": "0.0.0",
+  "description": "",
+  "main": "spotify.js",
+  "dependencies": {
+    "node-spotify": "~0.6.0",
+    "underscore": "~1.7.0"
+  },
+  "author": "Florian Cargoët - Joshfire"
+}
