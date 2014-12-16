@@ -1,19 +1,71 @@
 var u       = require('underscore');
 var config  = require('./config.json');
 var spotify = require('node-spotify')(config.spotifyOptions);
+var exec    = require('child_process').exec;
+
+function exit(code) {
+  stopADCLoop = true;
+  console.log('\nLogging out...');
+  spotify.logout(function () {
+    console.log('Bye.');
+    process.exit(code || 0);
+  });   
+}
+
+function readADC(callback) {
+  exec('python ./readADC.py', function (err, stdout, stderr) {
+    if (err) {
+      console.log(err);
+      exit(1);
+    }
+    var level = parseInt(stdout, 10);
+    if (isNaN(level)) {
+      level = 0;
+    }
+    callback(null, level);
+  });
+}
+
+var stopADCLoop = false;
+function readADCLoop() {
+  readADC(function (err, level) {
+    console.log(level);
+    if (460 < level && level < 480) {
+      if (paused) {
+        console.log('magnet far, playing');
+        togglePlayer();
+      }
+    } else {
+      if (!paused) {
+        console.log('magnet close, pausing');
+        togglePlayer();
+      }
+    }
+    if (!stopADCLoop) {
+      setTimeout(readADCLoop, 200);
+    }
+  });
+}
+readADCLoop();
+
+spotify.login(config.login.username, config.login.password, false, false);
 
 var currentTrack;
 
 // catch Ctrl-C and log out properly
 process.on('SIGINT', function () {
-  console.log('\nLogging out...');
-  spotify.logout(function () {
-    console.log('Bye.');
-    process.exit();
-  });
+  exit(0);
 });
 
-spotify.login(config.login.username, config.login.password, false, false);
+var paused = false;
+function togglePlayer() {
+  if (paused) {
+    spotify.player.resume();
+  } else {
+    spotify.player.pause();
+  }
+  paused = !paused;
+}
 
 spotify.on({
   ready : function () {
@@ -35,6 +87,7 @@ spotify.on({
 spotify.internal.protos.Track.prototype.play = function () {
   console.log('Playing ' + this.name);
   spotify.player.play(this);
+  paused = false;
 };
 
 
