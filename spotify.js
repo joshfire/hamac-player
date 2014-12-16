@@ -1,8 +1,29 @@
 var u       = require('underscore');
 var config  = require('./config.json');
-var spotify = require('node-spotify')(config.spotifyOptions);
+var spotify = require('node-spotify');
 var exec    = require('child_process').exec;
 
+
+// check root
+var id = process.getuid();
+if (id !== 0) {
+  process.stderr.write('Must run as root\n');
+  process.exit(1);
+}
+
+// check username and password existence
+var username = config.login.username || process.argv[2];
+var password = config.login.password || process.argv[3];
+
+if (!username || !password) {
+  process.stderr.write("Missing password or username\n");
+  process.exit(1);
+}
+
+// configure node-spotify
+spotify = spotify(config.spotifyOptions);
+
+// utility function to exit properly 
 function exit(code) {
   stopADCLoop = true;
   console.log('\nLogging out...');
@@ -15,7 +36,7 @@ function exit(code) {
 function readADC(callback) {
   exec('python ./readADC.py', function (err, stdout, stderr) {
     if (err) {
-      console.log(err);
+      process.stderr.write(err + '\n');
       exit(1);
     }
     var level = parseInt(stdout, 10);
@@ -48,7 +69,7 @@ function readADCLoop() {
 }
 readADCLoop();
 
-spotify.login(config.login.username, config.login.password, false, false);
+spotify.login(username, password, false, false);
 
 var currentTrack;
 
