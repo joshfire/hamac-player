@@ -1,7 +1,7 @@
 var u       = require('underscore');
 var config  = require('./config.json');
 var spotify = require('node-spotify');
-var exec    = require('child_process').exec;
+var adc     = require('./adc.js');
 
 
 // check root
@@ -16,67 +16,53 @@ var username = config.login.username || process.argv[2];
 var password = config.login.password || process.argv[3];
 
 if (!username || !password) {
-  process.stderr.write("Missing password or username\n");
+  process.stderr.write('Missing password or username\n');
   process.exit(1);
 }
 
 // configure node-spotify
 spotify = spotify(config.spotifyOptions);
 
-// utility function to exit properly 
+// utility function to exit properly
 function exit(code) {
-  stopADCLoop = true;
-  console.log('\nLogging out...');
+  console.log('\nStopping ADC');
+  adc.stop();
+  console.log('Logging out...');
   spotify.logout(function () {
     console.log('Bye.');
     process.exit(code || 0);
-  });   
-}
-
-function readADC(callback) {
-  exec('python ./readADC.py', function (err, stdout, stderr) {
-    if (err) {
-      process.stderr.write(err + '\n');
-      exit(1);
-    }
-    var level = parseInt(stdout, 10);
-    if (isNaN(level)) {
-      level = 0;
-    }
-    callback(null, level);
   });
 }
 
-var stopADCLoop = false;
-function readADCLoop() {
-  readADC(function (err, level) {
-    console.log(level);
-    if (460 < level && level < 480) {
-      if (paused) {
-        console.log('magnet far, playing');
-        togglePlayer();
-      }
-    } else {
-      if (!paused) {
-        console.log('magnet close, pausing');
-        togglePlayer();
-      }
-    }
-    if (!stopADCLoop) {
-      setTimeout(readADCLoop, 200);
-    }
-  });
-}
-readADCLoop();
-
-spotify.login(username, password, false, false);
-
-var currentTrack;
-
-// catch Ctrl-C and log out properly
+// catch Ctrl-C and exit properly
 process.on('SIGINT', function () {
   exit(0);
 });
+
+
+spotify.login(username, password, false, false);
+
+// start the ADC, toggle the player (pause/resume) when the magnet moves
+adc.run(function (err, level) {
+  if (err) {
+    process.stderr.write(err + '\n');
+    return;
+  }
+  if (460 < level && level < 480) {
+    if (paused) {
+      console.log('magnet far, playing');
+      togglePlayer();
+    }
+  } else {
+    if (!paused) {
+      console.log('magnet close, pausing');
+      togglePlayer();
+    }
+  }
+});
+
+var currentTrack;
+
 
 var paused = false;
 function togglePlayer() {
