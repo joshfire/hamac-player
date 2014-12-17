@@ -10,7 +10,7 @@
     "appkeyFile"     : "spotify_appkey.key"
   },
   "playlist" : "My playlist",
-
+  "maxPauseDurationMillis" : 600000,
   "magnet" : {
     "low"  : 450,
     "high" : 480

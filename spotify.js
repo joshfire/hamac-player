@@ -41,6 +41,8 @@ process.on('SIGINT', function () {
   exit(0);
 });
 
+var pauseStart = Date.now();
+
 // magnet handler
 function onMagnetValue(err, level) {
   if (err) {
@@ -50,12 +52,21 @@ function onMagnetValue(err, level) {
   if (config.magnet.low < level && level < config.magnet.high) {
     if (player.isPaused()) {
       console.log('Magnet far', level);
-      player.resume();
+      var duration = Date.now() - pauseStart;
+      if (duration > config.maxPauseDurationMillis) {
+        // restart from beginning
+        console.log('Long pause, start new track');
+        player.startRandomLoop();
+      } else {
+        // resume current track
+        player.resume();
+      }
     }
   } else {
     if (!player.isPaused()) {
       console.log('Magnet close', level);
       player.pause();
+      pauseStart = Date.now();
     }
   }
 }
