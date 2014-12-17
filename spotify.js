@@ -1,14 +1,14 @@
 var u       = require('underscore');
 var config  = require('./config.json');
 var spotify = require('node-spotify');
-var adc     = require('./adc');
-var player  = require('./player');
+var adc     = require('./lib/adc');
+var player  = require('./lib/player');
 
 // check root (required to access GPIOs)
 var id = process.getuid();
 if (id !== 0) {
   process.stderr.write('Must run as root\n');
-  //process.exit(1);
+  process.exit(1);
 }
 
 // check username and password existence
