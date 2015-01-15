@@ -3,3 +3,5 @@ settings/
 trace.txt
 spotify_appkey.key
 config.json
+npm-debug.log
+node_modules/
