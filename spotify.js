@@ -73,8 +73,20 @@ function onMagnetValue(err, level) {
 
 spotify.on({
   ready : function () {
+    console.log('Ready ! :)');
     var playlists = spotify.playlistContainer.getPlaylists();
     var hamacPlaylist = u.findWhere(playlists, {name : config.playlist});
+
+    if (!hamacPlaylist && playlists) {
+      console.log('Specified playlist could not be found, using the latest one by default');
+      hamacPlaylist = playlists.pop();
+    }
+
+    if (!hamacPlaylist) {
+      console.log('No playlist could be found ... Cancelling.');
+      exit(1);
+      return;
+    }
 
     player.setPlaylist(hamacPlaylist);
     player.startRandomLoop();

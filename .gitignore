@@ -1,5 +1,7 @@
 .cache/
 .settings/
+.trace
 trace.txt
 spotify_appkey.key
 config.json
+node_modules/
